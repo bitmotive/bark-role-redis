@@ -3,6 +3,10 @@ BARK: Redis
 
 Install Redis on the Ubuntu server.
 
+Currently, this role works with defaul redis.conf file. 
+
+Conf set up is upcoming
+
 
 Requirements
 ------------
@@ -16,7 +20,7 @@ Customize this role by providing environment variables in your shell or at the C
 Role Variables
 --------------
 
-**IN PROGRESS**:
+**IN PROGRESS**
 
 Dependencies
 ------------
