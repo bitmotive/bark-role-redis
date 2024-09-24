@@ -1,0 +1,135 @@
+---
+# ROLE: Redis
+#
+# DESCRIPTION:
+# This role installs Redis service 
+
+###############################################################################
+################### VARIABLE INITIALIZATION & TASK SETUP ######################
+###############################################################################
+
+- name: REDIS_BIND_ADDRESS prompt user input if unset
+  pause:
+    prompt: "SET REDIS_BIND_ADDRESS"
+    echo: yes
+  register: input
+  when: redis_bind_address is not defined
+
+- name: Set redis_bind_address fact
+  set_fact:
+    redis_bind_address: "{{ input.user_input }}"
+  when: redis_bind_address is not defined
+
+- name: REDIS_PORT prompt user input if unset
+  pause:
+    prompt: "SET REDIS_PORT"
+    echo: yes
+  register: input
+  when: redis_port is not defined
+
+- name: Set redis_port fact
+  set_fact:
+    redis_port: "{{ input.user_input }}"
+  when: redis_port is not defined
+
+- name: REDIS_TIMEOUT prompt user input if unset
+  pause:
+    prompt: "SET REDIS_TIMEOUT"
+    echo: yes
+  register: input
+  when: redis_timeout is not defined
+
+- name: Set redis_timeout fact
+  set_fact:
+    redis_timeout: "{{ input.user_input }}"
+  when: redis_timeout is not defined
+
+- name: REDIS_NUMBER_OF_DATABASES prompt user input if unset
+  pause:
+    prompt: "SET REDIS_NUMBER_OF_DATABASES"
+    echo: yes
+  register: input
+  when: redis_number_of_databases is not defined
+
+- name: Set redis_number_of_databases fact
+  set_fact:
+    redis_number_of_databases: "{{ input.user_input }}"
+  when: redis_number_of_databases is not defined
+
+- name: REDIS_MAXMEMORY prompt user input if unset
+  pause:
+    prompt: "SET REDIS_MAXMEMORY"
+    echo: yes
+  register: input
+  when: redis_maxmemory is not defined
+
+- name: Set redis_maxmemory fact
+  set_fact:
+    redis_maxmemory: "{{ input.user_input }}"
+  when: redis_maxmemory is not defined
+
+- name: REDIS_MAXMEMORY_POLICY prompt user input if unset
+  pause:
+    prompt: "SET REDIS_MAXMEMORY_POLICY"
+    echo: yes
+  register: input
+  when: redis_maxmemory_policy is not defined
+
+- name: Set redis_maxmemory_policy fact
+  set_fact:
+    redis_maxmemory_policy: "{{ input.user_input }}"
+  when: redis_maxmemory_policy is not defined
+
+###############################################################################
+############################ ROLE IMPLEMENTATION ##############################
+###############################################################################
+
+- name: Check if Redis is already installed
+  command: dpkg-query -W -f='${Status}' redis-server
+  register: redis_check
+  failed_when: false
+  changed_when: false
+
+- name: Install required packages
+  ansible.builtin.apt:
+    pkg:
+    - python3-apt
+    - aptitude
+    state: present
+  become: yes
+
+- name: Display Redis installation status. End play if already installed.
+  block:
+    - debug:
+        msg: "Redis is already installed on host"
+    - meta: end_play
+  when: redis_check.stdout.find('install ok installed') != -1
+
+- name: Install Redis
+  apt:
+    name: redis-server
+    state: present
+  become: yes
+
+- name: Ensure Redis is running
+  systemd:
+    name: redis-server
+    state: started
+    enabled: yes
+  become: yes
+
+- name: Redis health check
+  command: redis-cli ping
+  register: redis_health
+  failed_when: redis_health.stdout != "PONG"
+  changed_when: false
+
+- name: Display Redis health status
+  debug:
+    msg: "Redis is healthy and responding"
+  when: redis_health.stdout == "PONG"
+
+- name: Fail if Redis health check fails
+  fail:
+    msg: "Redis is not responding. Please check the Redis service."
+  when: redis_health.stdout != "PONG"

@@ -1,0 +1,8 @@
+---
+# handlers file for bark-role-redis
+- name: Restart Redis
+  systemd:
+    name: redis-server
+    state: restarted
+    daemon_reload: yes
+  become: yes
